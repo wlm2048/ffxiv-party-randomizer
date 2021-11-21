@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 ## API Key
 
-Create a file named ```secrets.txt``` containing
+Create a file named ```secrets.py``` containing
 
 ```python
 api_key = 'your api key from ffxivapi.com'
