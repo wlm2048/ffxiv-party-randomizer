@@ -79,17 +79,16 @@ logger.setLevel('DEBUG')
 config.dictConfig(Logger.config())
 
 class Character:
-    def __init__(self: object, name: str, config: dict = {}) -> None:
+    def __init__(self: object, name: str, level: int = 16) -> None:
         self.name = name
-        self.info = self.get()
-        self.config = config
-        self.config.setdefault('level', 16)
+        self.level = level
+
+        self.get()
 
     def get(self: object) -> object:
-        print(self.name)
         self.id = self.lookup_by_name()
         self.jobs = self.lookup_by_id()
-    
+
     def i_can_be(self: object, role: str) -> bool:
         return role in self.jobs.keys()
 
@@ -113,7 +112,7 @@ class Character:
             logger.debug(f"cache miss for {self.id}")
             r = requests.get(f"{base_url}/{self.id}/class_job/")
             assert r.status_code == 200 or f"There was an error requesting {self.id}"
-            cache.set(id, r, expire=3600)
+            cache.set(self.id, r, expire=3600)
             return r
 
     def lookup_by_name(self: object) -> str:
@@ -124,7 +123,7 @@ class Character:
         entry = soup.find('a', attrs={'class': 'entry__link'})
         return entry['href']
 
-    def lookup_by_id(self: object, min_level: int = 0) -> dict:
+    def lookup_by_id(self: object) -> dict:
         r = self._lookup_by_id()
         soup = BeautifulSoup(r.content, 'html5lib')
         roles = {}
@@ -139,20 +138,23 @@ class Character:
             for cl in classes:
                 job_name = cl.find('div', attrs={'class': 'character__job__name'}).text
                 job_level = cl.find('div', attrs={'class': 'character__job__level'}).text
-                if job_level != '-' and int(job_level) > min_level:
+                if job_level != '-' and int(job_level) > self.level:
                     c[job_name] = {'level': job_level}
-                    # print(f"    * {job_name}: {job_level}")
             if c:
                 roles[heading.text] = c
-        
+
         return roles
 
 def main() -> None:
     player_data = {}
-    for player in random.shuffle(players):
-        print(f"Getting job data for player: {player}")
+    for player in players:
+        logger.info(f"Getting job data for player: {player}")
         ch = Character(player)
-        pprint(ch.i_can_be('Tank'))
+        player_data[player] = ch
+
+    pprint(player_data)
+
+    # pprint(ch.i_can_be('Tank'))
     #     id = lookup_by_name(player)
     #     # print(f"got url {id}")
     #     jobs = lookup_by_id(id)
