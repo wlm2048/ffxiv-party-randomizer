@@ -2,12 +2,13 @@ import logging
 import requests
 import time
 import json
+from bs4 import BeautifulSoup
+from cachetools import cached, TTLCache
 
 from pprint import pprint
 
-import secrets
-api_key = secrets.api_key
 
+base_url = 'https://na.finalfantasyxiv.com'
 server = 'Excalibur'
 players = [
     'Helm Royce',
@@ -16,31 +17,50 @@ players = [
     'Julian Dereschabbot'
 ]
 
-def lookup_by_name(name: str) -> int:
+@cached(cache=TTLCache(maxsize=16, ttl=7200))
+def _lookup_by_name(name: str) -> object:
+    r = requests.get(f"{base_url}/lodestone/character/?q={name}&worldname={server}")
+    assert r.status_code == 200 or f"There was an error requesting {name}"
+    return r
+
+@cached(cache=TTLCache(maxsize=16, ttl=7200))
+def _lookup_by_id(id: str) -> object:
+    r = requests.get(f"{base_url}/{id}/class_job/")
+    assert r.status_code == 200 or f"There was an error requesting {id}"
+    return r
+
+def lookup_by_name(name: str) -> str:
     name.replace(' ','+')
-    for n in [name.lower(), name.upper(), name.title()]:
-        time.sleep(2)
-        r = requests.get(f"https://xivapi.com/character/search?name={n}&server={server}?private_key={api_key}")
-        assert r.status_code == 200 or f"There was an error requesting {n}"
-        data = r.json()
-        if not 'Pagination' in data:
-            pprint(data)
-        if data['Pagination']['Page'] == 0:
-            print(f" * There was no data returned for {n}")
-        else:
-            return data['Results'][0]['ID']
+    r = _lookup_by_name(name)
+    soup = BeautifulSoup(r.content, 'html5lib')
+    entry = soup.find('a', attrs={'class': 'entry__link'})
+    return entry['href']
 
 def lookup_by_id(id: int) -> dict:
-    time.sleep(2)
-    r = requests.get(f"https://xivapi.com/character/{id}?private_key={api_key}")
-    jobs = {job['UnlockedState']['Name']: job['Level'] for job in r.json()['Character']['ClassJobs'] if job['Level'] > 0}
-    return jobs
+    r = _lookup_by_id(id)
+    soup = BeautifulSoup(r.content, 'html5lib')
+    roles = {}
+    role_divs = soup.findAll('div', attrs={'class': 'character__job__role'})
+    for rd in role_divs:
+        x = rd.find('h4')
+        print(f" - {x.text}")
+        c = rd.findAll('li')
+        for y in c:
+            job_name = y.find('div', attrs={'class': 'character__job__name'}).text
+            job_level = y.find('div', attrs={'class': 'character__job__level'}).text
+            print(f"    * {job_name}: {job_level}")
+
+    exit()
+
+    # entry = soup.find('a', attrs={'class': 'entry__link'})
+    # return entry['href']
 
 def main() -> None:
     player_data = {}
     for player in players:
         print(f"Looking up player: {player}")
         id = lookup_by_name(player)
+        print(f"got url {id}")
         jobs = lookup_by_id(id)
         player_data[player] = {
             'id': id,
