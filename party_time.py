@@ -3,12 +3,22 @@ from logging import config
 import requests
 import random
 import json
+import time
 from bs4 import BeautifulSoup
 from diskcache import Cache
 from pprint import pprint
+import argparse
+import re
+
+parser = argparse.ArgumentParser(description='Do the duty!')
+parser.add_argument('-l', '--level', type=int, help='Minimum level to consider', default=16)
+parser.add_argument('-d', '--dps', action='store_true', help='Prioritize ranged AND melee dps', default=False)
+parser.add_argument('-v', '--verbose', action='count', help='Increase logging verbosity', default=0)
+args = parser.parse_args()
 
 cache = Cache(".cache")
 cache.expire()
+cache_time = 7200
 
 base_url = 'https://na.finalfantasyxiv.com'
 server = 'Excalibur'
@@ -18,12 +28,11 @@ players = [
     "Pokina Da'eye",
     'Julian Dereschabbot'
 ]
-duty_roles = {
-    'Tank': None,
-    'Healer': None,
-    'DPS1': None,
-    'DPS2': None
-}
+duty_roles = ['Tank', 'Healer']
+if args.dps:
+    duty_roles.extend(['Melee DPS', 'Physical Ranged DPS'])
+else:
+    duty_roles.extend(['DPS1', 'DPS2'])
 
 class Logger:
     def getLogger(name: str) -> object:
@@ -75,21 +84,30 @@ class NoErrors:
             return True
 
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
+if args.verbose >= 2:
+    ll = 'DEBUG'
+elif args.verbose == 1:
+    ll = 'INFO'
+else:
+    ll = 'WARNING'
+logger.setLevel(ll)
 config.dictConfig(Logger.config())
 
-class Character:
-    def __init__(self: object, name: str, level: int = 16) -> None:
-        self.name = name
-        self.level = level
+logger.debug(f"args are: {args}")
 
+class Character:
+    def __init__(self: object, name: str) -> None:
+        self.name = name
         self.get()
 
     def get(self: object) -> object:
         self.id = self.lookup_by_name()
         self.jobs = self.lookup_by_id()
 
-    def i_can_be(self: object, role: str) -> bool:
+    def not_do(self: object, role: str) -> bool:
+        return not self.can_do(role)
+
+    def can_do(self: object, role: str) -> bool:
         return role in self.jobs.keys()
 
     def _lookup_by_name(self: object, name: str) -> object:
@@ -101,7 +119,7 @@ class Character:
             logger.debug(f"cache miss for {key}")
             r = requests.get(f"{base_url}/lodestone/character/?q={name}&worldname={server}")
             assert r.status_code == 200 or f"There was an error requesting {name}"
-            cache.set(key, r, expire=3600)
+            cache.set(key, r, expire=cache_time)
             return r
 
     def _lookup_by_id(self: object) -> object:
@@ -112,7 +130,7 @@ class Character:
             logger.debug(f"cache miss for {self.id}")
             r = requests.get(f"{base_url}/{self.id}/class_job/")
             assert r.status_code == 200 or f"There was an error requesting {self.id}"
-            cache.set(self.id, r, expire=3600)
+            cache.set(self.id, r, expire=cache_time)
             return r
 
     def lookup_by_name(self: object) -> str:
@@ -129,19 +147,26 @@ class Character:
         roles = {}
         role_divs = soup.findAll('div', attrs={'class': 'character__job__role'})
         for rd in role_divs:
-            heading = rd.find('h4')
-            if 'Disciples' in heading.text:
+            role = rd.find('h4')
+            if 'Disciples' in role.text:
                 continue
-            logger.debug(f" - {heading.text}")
+            role_name = role.text
+            if not args.dps and "DPS" in role_name:
+                role_name = "DPS"
             classes = rd.findAll('li')
             c = {}
             for cl in classes:
                 job_name = cl.find('div', attrs={'class': 'character__job__name'}).text
                 job_level = cl.find('div', attrs={'class': 'character__job__level'}).text
-                if job_level != '-' and int(job_level) > self.level:
+                if job_level != '-' and int(job_level) >= args.level:
                     c[job_name] = {'level': job_level}
             if c:
-                roles[heading.text] = c
+                if role_name in roles:
+                    for job in c:
+                        roles[role_name][job] = c[job]
+                else:
+                    roles[role_name] = c
+                logger.debug(f" - can do {role_name}: {roles[role_name]}")
 
         return roles
 
@@ -152,32 +177,41 @@ def main() -> None:
         ch = Character(player)
         player_data[player] = ch
 
-    pprint(player_data)
+    who_can = {}
+    for role in duty_roles:
+        _role = role
+        if re.match(r"DPS\d", role):
+            _role = "DPS"
+        who_can[role] = [player for player in player_data if player_data[player].can_do(_role)]
 
-    # pprint(ch.i_can_be('Tank'))
-    #     id = lookup_by_name(player)
-    #     # print(f"got url {id}")
-    #     jobs = lookup_by_id(id)
-    #     player_data[player] = {
-    #         'id': id,
-    #         'jobs': jobs
-    #     }
+    sorted_whocan = {k: v for k, v in sorted(who_can.items(), key=lambda item: len(item[1]), reverse=True)}
 
-    # random_role = list(duty_roles.keys())
-    # random.shuffle(random_role)
-    # random.shuffle(players)
+    picked = []
+    final = {}
+    success = False
+    while not success:
+        for role, who in sorted_whocan.items():
+            while True:
+                random.shuffle(who)
+                for lucky in who:
+                    if lucky in picked:
+                        continue
+                    else:
+                        picked.append(lucky)
+                        break
+                break
+            final[role] = lucky
+        if len(set(final.values())) == 4:
+            success = True
 
-    # for i, player in enumerate(players):
-    #     print(f"{player} will be {random_role[i]}")
-
-    # print(json.dumps(player_data, sort_keys=True, indent=4))
+    for role in duty_roles:
+        _role = role
+        if re.match(r"DPS\d", role):
+            _role = "DPS"
+        jobs = dict(player_data[final[role]].jobs)[_role]
+        j = list(jobs.keys())
+        random.shuffle(j)
+        print(f"{final[role]}: {role} ({j[0]} - {jobs[j[0]]['level']})")
 
 if __name__ == '__main__':
     main()
-    # id = lookup_by_name("Excalibur", "Pokina+Da'eye")
-    # lookup_by_id(id)
-
-
-
-
-
