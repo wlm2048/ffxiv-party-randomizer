@@ -15,7 +15,7 @@ redis_server = redis.Redis() # Create access to Redis
 
 parser = argparse.ArgumentParser(description='Do the duty!')
 parser.add_argument('-l', '--level', type=int, help='Minimum level to consider', default=16)
-parser.add_argument('-m', '--level2', type=int, help='Maximum level to consider', default=89)
+parser.add_argument('-m', '--level2', type=int, help='Maximum level to consider', default=90)
 parser.add_argument('-d', '--dps', action='store_true', help='Prioritize ranged AND melee dps', default=False)
 parser.add_argument('-v', '--verbose', action='count', help='Increase logging verbosity', default=0)
 args = parser.parse_args()
@@ -256,12 +256,16 @@ class Character:
                             logger.debug(f"    ** found {job} removing {base_classes[job]}")
                             del roles[role2][base_classes[job]]
 
+
         # remove jobs if blacklisted
         for role, jobs in roles.items():
             for job in jobs.copy():
                 if self.job_lock and job.lower() in self.job_lock:
                     logger.info(f"Removing {job} because of blacklist")
                     del roles[role][job]
+
+        # if a role is empty, remove it
+        roles = dict((k, v) for k, v in roles.items() if len(roles[k]) > 0)
 
         return roles
 
@@ -326,12 +330,19 @@ def find_winners(more_args: dict = {}) -> list:
         logger.info(f"Found a solution after {attempts} attempts")
 
     for role in duty_roles:
+        # (f"Checking {role}")
         _role = role
         if re.match(r"DPS\d", role):
             _role = "DPS"
+        # (final[role])
+        # (player_data[final[role]].jobs)
         jobs = dict(player_data[final[role]].jobs)[_role]
         j = list(jobs.keys())
         random.shuffle(j)
+        # ("Final:")
+        # (final)
+        # ("Jobs:")
+        # (jobs)
         winner = f"{final[role]}: {role} ({j[0]} - {jobs[j[0]]['level']})"
         logger.info(winner)
         winners.append(winner)
