@@ -2,6 +2,7 @@ from datetime import timedelta
 from party_time import Logger, Character, players
 from re import finditer
 import asyncio
+import discord
 from discord.ext import commands
 import logging
 import party_time
@@ -10,7 +11,11 @@ import redis
 import time
 
 redis_server = redis.Redis() # Create access to Redis
-bot = commands.Bot(command_prefix="!") # starts the discord client
+
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents) # starts the discord client
+
 logger = logging.getLogger(__name__)
 party_time.logger.setLevel(logging.DEBUG)
 
