@@ -292,7 +292,8 @@ def find_winners(more_args: dict = {}) -> list:
         
     duty_roles = ['Tank', 'Healer']
     if args.dps:
-        duty_roles.extend(random.sample(['Melee DPS', 'Physical Ranged DPS', 'Magical Ranged DPS'], 2))
+        duty_roles.extend(['Melee DPS'])
+        duty_roles.extend(random.sample(['Physical Ranged DPS', 'Magical Ranged DPS'], 1))
     else:
         duty_roles.extend(['DPS1', 'DPS2'])
 
