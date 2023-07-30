@@ -132,4 +132,4 @@ dmypy.json
 .pyre/
 
 # API Key
-secrets.py
+AUTH_KEY.txt

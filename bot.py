@@ -23,10 +23,12 @@ AUTH_TOKEN = str(redis_server.get("AUTH_KEY").decode("utf-8"))
 
 async def take_action(mc: str) -> bool:
     mc = mc.lower()
-    
+
     print(f"Actioning: {mc}")
+
+    command = "(roleroll|rr)"
     
-    rrm = re.match(r'!roleroll\s+(?P<action>\w+)\s+(?P<the_rest>.*)$', mc, re.IGNORECASE)
+    rrm = re.match(fr'!{command}\s+(?P<action>\w+)\s+(?P<the_rest>.*)$', mc, re.IGNORECASE)
     action = rrm['action']
     the_rest = rrm['the_rest']
 
@@ -70,34 +72,20 @@ async def take_action(mc: str) -> bool:
 async def on_ready():
     print(f"Successful Launch!!! {bot.user}")
     
-# @bot.event
-# async def on_message(message): # event that happens per any message.
-#     print(f"{message.channel}: {message.author}:       {message.author.name}: {message.content}")
-    
 @bot.command()
 async def ping(ctx):
     await ctx.send("pong")
-    
-# @bot.command()
-# async def roleroll(ctx, *args):
-#     await ctx.send('{} arguments: {}'.format(len(args), ', '.join(args)))
-    
-# @bot.command()
-# async def character(ctx, *args):
-#     if len(args) == 0:
-#         await ctx.send("Assign which character to yourself?")
-#         for i, player in enumerate(players, start=1):
-#             await ctx.send(f" {i}: {player}")
-#         await ctx.send("(use !character <number> to assign)")
-#     elif len(args) == 1:
         
 @bot.event
+
 async def on_message(message):
-    if '!roleroll' in message.content.lower():
+    if f'!{command}' in message.content.lower():
         new_args = {}
         mc = message.content
+
+
         logger.info(f"Parsing command: {mc}")
-        level_match = re.match(r'!roleroll\s+level\s+(?P<level>\d+)(?P<level2>\s*\d+)?(?P<dps>\s*dps)?', mc, re.IGNORECASE)
+        level_match = re.match(fr'!{command}\s+level\s+(?P<level>\d+)(?P<level2>\s*\d+)?(?P<dps>\s*dps)?', mc, re.IGNORECASE)
         if level_match:
             logger.info(f"Using level {level_match.group('level')}")
             new_args['level'] = level_match.group('level')
@@ -108,7 +96,7 @@ async def on_message(message):
         if level_match and level_match.group('dps'):
             new_args['dps'] = True
 
-        if re.match(r'!roleroll\s+(?:(?:un)?lock|(?:un)?blacklist)\s+', mc, re.IGNORECASE):
+        if re.match(fr'!{command}\s+(?:(?:un)?lock|(?:un)?blacklist)\s+', mc, re.IGNORECASE):
             return await take_action(mc)
         
         role_locks = redis_server.keys("role:*")
