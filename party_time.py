@@ -162,8 +162,12 @@ class Character:
     def get(self: object) -> object:
         logger.info(f"Looking up {self.name}")
         self.id = self.lookup_by_name()
+        logger.info(f"Got {self.id}")
+        logger.info(f"Checking for role locks")
         self.role_lock = self.role_locks()
+        logger.info(f"Checking for job locks")
         self.job_lock = self.job_locks()
+        logger.info(f"Getting jobs")
         self.jobs = self.get_jobs()
 
     def job_locks(self: object) -> object:
@@ -230,25 +234,16 @@ class Character:
         r = self._lookup_by_id()
         soup = BeautifulSoup(r.content, 'html5lib')
         roles = {}
-        role_divs = soup.findAll('div', attrs={'class': 'character__job__role'})
-
-
         cc = soup.find('div', attrs={'class': 'character__content'})
-        hjl = cc.findAll('h4', attrs={'class': 'heading--lead'})
-        for hjlr in hjl:
-            print(hjlr)
-
-
-
-        for rd in role_divs:
-            role = rd.find('h4')
-            logger.info(f"Found role div named {role}")
-            if 'Disciples' in role.text:
+        role_headings = cc.findAll('h4', attrs={'class': 'heading--lead'})
+        for role_heading in role_headings:
+            role = role_heading.text
+            if 'Disciples' in role:
                 continue
-            role_name = role.text
-            if not args.dps and "DPS" in role_name:
-                role_name = "DPS"
-            classes = rd.findAll('li')
+            if not args.dps and "DPS" in role:
+                role = "DPS"
+            job_list = role_heading.find_next_sibling()
+            classes = job_list.findAll('li')
             c = {}
             for cl in classes:
                 job_name = cl.find('div', attrs={'class': 'character__job__name'}).text
@@ -256,12 +251,12 @@ class Character:
                 if job_level != '-' and int(job_level) >= args.level and int(job_level) <= args.level2:
                     c[job_name] = {'level': job_level}
             if c:
-                if role_name in roles:
+                if role in roles:
                     for job in c:
-                        roles[role_name][job] = c[job]
+                        roles[role][job] = c[job]
                 else:
-                    roles[role_name] = c
-                logger.debug(f" - can do {role_name}: {roles[role_name]}")
+                    roles[role] = c
+                logger.debug(f" - can do {role}: {roles[role]}")
 
         # remove base jobs if never progressed
         for role in roles:
@@ -297,7 +292,7 @@ def find_winners(more_args: dict = {}) -> list:
         
     duty_roles = ['Tank', 'Healer']
     if args.dps:
-        duty_roles.extend(['Melee DPS', 'Physical Ranged DPS'])
+        duty_roles.extend(random.sample(['Melee DPS', 'Physical Ranged DPS', 'Magical Ranged DPS'], 2))
     else:
         duty_roles.extend(['DPS1', 'DPS2'])
 
@@ -309,6 +304,7 @@ def find_winners(more_args: dict = {}) -> list:
 
     who_can = {}
     for role in duty_roles:
+        print(f"--- {role}")
         _role = role
         if re.match(r"DPS\d", role):
             _role = "DPS"
