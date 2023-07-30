@@ -231,6 +231,15 @@ class Character:
         soup = BeautifulSoup(r.content, 'html5lib')
         roles = {}
         role_divs = soup.findAll('div', attrs={'class': 'character__job__role'})
+
+
+        cc = soup.find('div', attrs={'class': 'character__content'})
+        hjl = cc.findAll('h4', attrs={'class': 'heading--lead'})
+        for hjlr in hrl:
+            print(hjlr)
+
+
+
         for rd in role_divs:
             role = rd.find('h4')
             logger.info(f"Found role div named {role}")
