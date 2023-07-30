@@ -82,7 +82,7 @@ async def on_message(message):
     if f'!{command}' in message.content.lower():
         new_args = {}
         mc = message.content
-
+        await message.channel.send("Role roll is parsing {mc}")
 
         logger.info(f"Parsing command: {mc}")
         level_match = re.match(fr'!{command}\s+level\s+(?P<level>\d+)(?P<level2>\s*\d+)?(?P<dps>\s*dps)?', mc, re.IGNORECASE)
