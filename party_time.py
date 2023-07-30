@@ -95,11 +95,17 @@ class Logger:
             "version": 1,
             "disable_existing_loggers": False,
             "root": {
-                "handlers": ["hand_so", "hand_se"],
+                "handlers": ["file", "hand_so", "hand_se"],
                 "formatter": "o",
                 "level": "INFO"
             },
             "handlers": {
+                "file": {
+                    'class': 'logging.FileHandler',
+                    'filename': 'roleroll.log',
+                    'formatter': 'default',
+                    'level': 'DEBUG',
+                },
                 "hand_so": {
                     "class": "logging.StreamHandler",
                     "level": "DEBUG",
