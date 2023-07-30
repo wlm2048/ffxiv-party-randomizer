@@ -79,6 +79,7 @@ async def ping(ctx):
 @bot.event
 
 async def on_message(message):
+    logger.info(f"M: {message.content}")
     if fr'!{command}' in message.content.lower():
         new_args = {}
         mc = message.content
