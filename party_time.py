@@ -233,6 +233,7 @@ class Character:
         role_divs = soup.findAll('div', attrs={'class': 'character__job__role'})
         for rd in role_divs:
             role = rd.find('h4')
+            logger.info(f"Found role div named {role}")
             if 'Disciples' in role.text:
                 continue
             role_name = role.text
