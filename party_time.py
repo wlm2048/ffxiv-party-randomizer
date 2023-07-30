@@ -235,7 +235,7 @@ class Character:
 
         cc = soup.find('div', attrs={'class': 'character__content'})
         hjl = cc.findAll('h4', attrs={'class': 'heading--lead'})
-        for hjlr in hrl:
+        for hjlr in hjl:
             print(hjlr)
 
 
