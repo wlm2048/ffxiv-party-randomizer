@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 party_time.logger.setLevel(logging.DEBUG)
 
 AUTH_TOKEN = str(redis_server.get("AUTH_KEY").decode("utf-8"))
+command = "(roleroll|rrr)"
 
 async def take_action(mc: str) -> bool:
     mc = mc.lower()
 
     print(f"Actioning: {mc}")
 
-    command = "(roleroll|rrr)"
     
     rrm = re.match(fr'!{command}\s+(?P<action>\w+)\s+(?P<the_rest>.*)$', mc, re.IGNORECASE)
     action = rrm['action']
@@ -79,7 +79,7 @@ async def ping(ctx):
 @bot.event
 
 async def on_message(message):
-    if f'!{command}' in message.content.lower():
+    if fr'!{command}' in message.content.lower():
         new_args = {}
         mc = message.content
         await message.channel.send("Role roll is parsing {mc}")
