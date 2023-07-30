@@ -79,10 +79,10 @@ async def ping(ctx):
 @bot.event
 
 async def on_message(message):
-    logger.info(f"M: {message.content}")
-    if fr'!{command}' in message.content.lower():
+    mc = message.content
+    logger.info(f"M: {mc}")
+    if re.match(fr'^!{command}', mc, re.IGNORECASE):
         new_args = {}
-        mc = message.content
         await message.channel.send("Role roll is parsing {mc}")
 
         logger.info(f"Parsing command: {mc}")
