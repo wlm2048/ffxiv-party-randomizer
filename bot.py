@@ -100,7 +100,7 @@ async def on_message(message):
                 new_args['dps'] = True
                 msg += f", and both melee and ranged DPS"
 
-            await message.channel.send(f"msg")
+            await message.channel.send(f"{msg}")
 
         if re.match(fr'!{command}\s+(?:(?:un)?lock|(?:un)?blacklist)\s+', mc, re.IGNORECASE):
             return await take_action(mc)
