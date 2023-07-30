@@ -83,19 +83,24 @@ async def on_message(message):
     logger.info(f"M: {mc}")
     if re.match(fr'^!{command}', mc, re.IGNORECASE):
         new_args = {}
-        await message.channel.send("Role roll is parsing {mc}")
+        await message.channel.send(f"Role roll is parsing {mc}")
 
         logger.info(f"Parsing command: {mc}")
         level_match = re.match(fr'!{command}\s+level\s+(?P<level>\d+)(?P<level2>\s*\d+)?(?P<dps>\s*dps)?', mc, re.IGNORECASE)
         if level_match:
             logger.info(f"Using level {level_match.group('level')}")
             new_args['level'] = level_match.group('level')
+            msg = f"Looking for group with min level {new_args['level']}"
             
-        if level_match and level_match.group('level2'):
-            new_args['level2'] = level_match.group('level2')
+            if level_match.group('level2'):
+                new_args['level2'] = level_match.group('level2')
+                msg += f", and max level {new_args['level2']}"
             
-        if level_match and level_match.group('dps'):
-            new_args['dps'] = True
+            if level_match.group('dps'):
+                new_args['dps'] = True
+                msg += f", and both melee and ranged DPS"
+
+            await message.channel.send(f"msg)
 
         if re.match(fr'!{command}\s+(?:(?:un)?lock|(?:un)?blacklist)\s+', mc, re.IGNORECASE):
             return await take_action(mc)
