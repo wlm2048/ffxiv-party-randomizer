@@ -26,7 +26,7 @@ async def take_action(mc: str) -> bool:
 
     print(f"Actioning: {mc}")
 
-    command = "(roleroll|rr)"
+    command = "(roleroll|rrr)"
     
     rrm = re.match(fr'!{command}\s+(?P<action>\w+)\s+(?P<the_rest>.*)$', mc, re.IGNORECASE)
     action = rrm['action']
