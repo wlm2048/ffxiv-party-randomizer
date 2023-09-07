@@ -18,6 +18,7 @@ parser.add_argument('-l', '--level', type=int, help='Minimum level to consider',
 parser.add_argument('-m', '--level2', type=int, help='Maximum level to consider', default=90)
 parser.add_argument('-d', '--dps', action='store_true', help='Prioritize ranged AND melee dps', default=False)
 parser.add_argument('-v', '--verbose', action='count', help='Increase logging verbosity', default=0)
+# parser.add_argument('-c', '--chest')
 args = parser.parse_args()
 
 cache = Cache(".cache")
@@ -151,6 +152,28 @@ config.dictConfig(Logger.config())
 
 logger.debug(f"args are: {args}")
 
+
+
+
+# class Company:
+#     def init(self: object) -> None:
+#         pass
+
+#     def chest(self: object, item: str) -> object:
+#         cache_key = 'chest'
+#         if cache.get(cache_key):
+#             logger.debug(f"cache hit for {cache_key}")
+#             return cache.get(cache_key)
+#         else:
+#             logger.debug(f"cache miss for {cache_key}")
+#             r = requests.get(f"{base_url}/lodestone/freecompany/9236460623271910418/chest/")
+#             assert r.status_code == 200 or f"There was an error requesting company chest"
+#             cache.set(cache_key, r, expire=cache_time)
+#             print(r.content)
+#             exit()
+#             return r
+
+
 class Character:
     def __init__(self: object, name: str) -> None:
         self.name = name
@@ -248,6 +271,8 @@ class Character:
             for cl in classes:
                 job_name = cl.find('div', attrs={'class': 'character__job__name'}).text
                 job_level = cl.find('div', attrs={'class': 'character__job__level'}).text
+                if job_name == 'Blue Mage':
+                    continue
                 if job_level != '-' and int(job_level) >= args.level and int(job_level) <= args.level2:
                     c[job_name] = {'level': job_level}
             if c:
@@ -289,7 +314,13 @@ def find_winners(more_args: dict = {}) -> list:
         args.level2 = int(more_args['level2'])
     if 'dps' in more_args:
         args.dps = True
+    # if args.chest:
+    #     cc = Company()
+    #     z = cc.chest("potato")
+    #     print(z)
+    #     exit()
         
+
     duty_roles = ['Tank', 'Healer']
     if args.dps:
         duty_roles.extend(['Melee DPS'])
@@ -305,7 +336,6 @@ def find_winners(more_args: dict = {}) -> list:
 
     who_can = {}
     for role in duty_roles:
-        print(f"--- {role}")
         _role = role
         if re.match(r"DPS\d", role):
             _role = "DPS"
@@ -343,7 +373,7 @@ def find_winners(more_args: dict = {}) -> list:
         logger.info(f"Found a solution after {attempts} attempts")
 
     for role in duty_roles:
-        # (f"Checking {role}")
+        logger.info(f"Checking {role}")
         _role = role
         if re.match(r"DPS\d", role):
             _role = "DPS"
@@ -361,6 +391,7 @@ def find_winners(more_args: dict = {}) -> list:
         winners.append(winner)
 
     return winners
+
 
 def main() -> None:
     winners = find_winners()
