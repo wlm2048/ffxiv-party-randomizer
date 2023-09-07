@@ -23,7 +23,7 @@ args = parser.parse_args()
 
 cache = Cache(".cache")
 cache.expire()
-cache_time = 7200
+cache_time = 8 * 60 * 60
 
 base_url = 'https://na.finalfantasyxiv.com'
 server = 'Excalibur'
