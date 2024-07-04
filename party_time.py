@@ -15,7 +15,7 @@ redis_server = redis.Redis() # Create access to Redis
 
 parser = argparse.ArgumentParser(description='Do the duty!')
 parser.add_argument('-l', '--level', type=int, help='Minimum level to consider', default=16)
-parser.add_argument('-m', '--level2', type=int, help='Maximum level to consider', default=90)
+parser.add_argument('-m', '--level2', type=int, help='Maximum level to consider', default=100)
 parser.add_argument('-d', '--dps', action='store_true', help='Prioritize ranged AND melee dps', default=False)
 parser.add_argument('-v', '--verbose', action='count', help='Increase logging verbosity', default=0)
 # parser.add_argument('-c', '--chest')
