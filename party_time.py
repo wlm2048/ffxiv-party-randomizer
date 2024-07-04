@@ -69,7 +69,9 @@ jobs = {
     "smn": "summoner",
     "thm": "thaumaturge",
     "war": "warrior",
-    "whm": "white mage"
+    "whm": "white mage",
+    "vpr": "viper",
+    "pct": "pictomancer"
 }
 
 base_classes = {
