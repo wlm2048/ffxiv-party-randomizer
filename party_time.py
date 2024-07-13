@@ -348,7 +348,7 @@ def find_winners(more_args: dict = {}) -> list:
     picked = []
     final = {}
     success = False
-    max_attempts = 100
+    max_attempts = 500
     attempts = 0
     while not success:
         logger.debug("Trying to find a group... ")
